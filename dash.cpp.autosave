@@ -1,0 +1,27 @@
+#include "dash.h"
+using namespace std;
+
+typedef MPD_adaptationSet AdaptationSet;
+
+struct MPD_Fractional{
+    int num, den;
+};
+
+struct MPD_Representation{
+    int id;
+    long bandwidth;
+    
+    int dependency_id;
+    
+    int quality_ranking;
+};
+
+struct MPD_adaptationSet {
+   
+};
+
+dash::dash()
+{
+    
+       std::vector<>
+}
