@@ -16,15 +16,15 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp \
-    dash.cpp \
-    Representation.cpp \
-    AdaptationSet.cpp \
-    SegmentList.cpp \
-    MultipleSegmentBase.cpp
+    MPD/src/MPD.cpp \
+    MPD/src/MPD_AdaptationSet.cpp \
+    MPD/src/MPD_Period.cpp \
+    MPD/src/MPD_Representation.cpp
 
 HEADERS += \
-    dash.h \
-    Representation.h \
-    AdaptationSet.h \
-    SegmentList.h \
-    MultipleSegmentBase.h
+    MPD/src/dash.h \
+    MPD/src/MPD.h \
+    MPD/src/MPD_AdaptationSet.h \
+    MPD/src/MPD_Period.h \
+    MPD/src/MPD_Representation.h \
+    MPD/src/MPD_Segment.h
