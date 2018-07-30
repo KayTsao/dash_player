@@ -33,11 +33,11 @@ public:
     uint32_t quality_ranking;
     std::string media_stream_structure_id;
     SegmentTemplate *segment_template;
-
     SegmentBase *segment_base;
     SegmentList *segment_list;
     std::vector<BaseUrl> base_URLs;
 
+    uint32_t nb_seg_in_rep;
     // GF_List *sub_representations;
 };
 }

@@ -21,7 +21,10 @@ public:
         max_height(0),
         max_framerate(0),
         par(""),
-        lang(""){}
+        lang(""),
+        segment_base     (NULL),
+        segment_list     (NULL),
+        segment_template (NULL){}
 
     ~AdaptationSet(){;}
 

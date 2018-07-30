@@ -11,6 +11,16 @@ typedef enum {
     MPD_TYPE_DYNAMIC,
 } MPD_Type;
 
+typedef enum {
+    MPD_RESOLVE_URL_MEDIA,
+    MPD_RESOLVE_URL_INIT,
+    MPD_RESOLVE_URL_INDEX,
+    //same as GF_MPD_RESOLVE_URL_MEDIA but does not replace $Time$ and $Number$
+    MPD_RESOLVE_URL_MEDIA_TEMPLATE,
+    //same as GF_MPD_RESOLVE_URL_MEDIA but does not use startNumber
+    MPD_RESOLVE_URL_MEDIA_NOSTART,
+}MPD_URLResolveType;
+
 struct MPD_Descriptor
 {
     //MPD_EXTENSIBLE
@@ -34,7 +44,7 @@ public:
     MPD();
 
     std::string ID;
-
+    int active_period_index;
     uint64_t min_buffer_time; /* expressed in milliseconds */	/*MANDATORY*/
     MPD_Type type;
     uint64_t media_presentation_duration; /* expressed in milliseconds */	/*MANDATORY if type=static*/
@@ -42,8 +52,6 @@ public:
     std::string profiles;	/*MANDATORY*/
     MPD_ProgramInfo *program_infos; /*list of GF_MPD_ProgramInfo */
     std::string xmlns;
-    std::vector<Period> periods;
-
 
     uint64_t availabilityStartTime; /* expressed in milliseconds */	/*MANDATORY if type=dynamic*/
     uint64_t availabilityEndTime;/* expressed in milliseconds */
@@ -58,11 +66,24 @@ public:
         /*list of strings */
     std::vector<std::string> *locations;
         /*list of GF_MPD_Period */
+    std::vector<Period> periods;
     std::vector<AdaptationSet> AdaptationSets;
         /*set during parsing*/
     const char *xml_namespace; /*won't be freed by GPAC*/
 
+    char* basic_URL;
+    char* mpd_get_base_url(char* input_url);
+    int mpd_resolve_segment_duration(Period period, AdaptationSet AdaSet, Representation rep,
+                                          uint64_t *out_duration, uint32_t *out_timescale);
 
+    int mpd_resolve_url(int AdaSetID, int repID, int download_seg_index, MPD_URLResolveType resolve_type,
+                        uint64_t *out_segment_duration_in_ms, char **out_url);
+
+    // initial
+    //void get_segment_duration(Representation rep);
+    void gf_dash_get_segment_duration(Representation rep, AdaptationSet AdaSet, Period period,
+                                   uint32_t* out_nb_segments, double* out_max_seg_duration);
+    /*
     bool mpd_parse_bool(const char* const AttributeValue);
     std::string mpd_parse_string(const char* const AttributeValue);
     uint32_t mpd_parse_int(const char* const AttributeValue);
@@ -93,6 +114,7 @@ public:
     int mpd_parse_representation(MPD *mpd, Representation* representations);//, GF_XMLNode *root)
     int mpd_init_from_dom(MPD *mpd, const char *base_url);//GF_XMLNode *root,
     int mpd_complete_from_dom(MPD *mpd, const char *base_url);//GF_XMLNode *root,
+*/
 };
 
 }

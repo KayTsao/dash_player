@@ -8,7 +8,7 @@ QT       += core
 
 QT       -= gui
 
-TARGET = untitled
+TARGET = DashDownloader
 CONFIG   += console
 CONFIG   -= app_bundle
 

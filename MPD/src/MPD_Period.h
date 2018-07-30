@@ -9,11 +9,15 @@ class Period
 public:
     Period():
         id(""),
-        duration(""){}
+        duration(""),
+        segment_base     (NULL),
+        segment_list     (NULL),
+        segment_template (NULL){}
     ~Period(){;}
 
     std::string id;
     std::string duration;
+    uint64_t duration_in_ms;
     std::vector<AdaptationSet> adaptationSets;
 
 
@@ -25,9 +29,9 @@ public:
     std::string serviceLocation;
     std::string byteRange;
 
-    SegmentBase *segmentBase;
-    SegmentList *segmentList;
-    SegmentTemplate *segmentTemplate;
+    SegmentBase *segment_base;
+    SegmentList *segment_list;
+    SegmentTemplate *segment_template;
 
     //std::vector<Subset> subsets;
     std::string xlinkHref;

@@ -83,6 +83,29 @@ struct SegmentList
 
 
 
+
+class SegmentTemplate{
+public:
+    SegmentTemplate(){
+        index="";
+        initialization = "unknown";
+        media = "unknown";
+        bitstream_switching = "";
+        start_number = 0;
+        duration = 0;
+        timescale = 0;
+    }
+    //MultipleSegmentBase multiple_segment_base;
+    std::string media;
+    uint32_t timescale;
+    uint32_t start_number;
+    uint32_t duration;
+
+    std::string index;
+    std::string initialization;
+    std::string bitstream_switching;
+};
+/*
 struct SegmentTemplate{
 
     //MultipleSegmentBase multiple_segment_base;
@@ -95,7 +118,7 @@ struct SegmentTemplate{
     std::string initialization;
     std::string bitstream_switching;
 };
-
+*/
 }
 
 #endif // SEGMENT_H
