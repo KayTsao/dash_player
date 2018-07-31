@@ -1,5 +1,5 @@
 #include "MPD.h"
-using namespace dash;
+using namespace mpd;
 using namespace std;
 #include <cstring>
 #include <iostream>
@@ -8,73 +8,81 @@ MPD::MPD()
     active_period_index = 0;
 }
 
-char* MPD::mpd_get_base_url(char* MPD_URL){
-    //char* MPD_URL = "http://10.3.57.202:8000/dash/rabbit/dash_tiled.mpd";
+void MPD::set_mpd_url(string mpd_url){
+
+    MPD_URL = mpd_url;
     char solved_base[128];
     char *sep1, *sep2;
-    strcpy(solved_base, MPD_URL); //printf("%s\n", solved_template);
+    strcpy(solved_base, MPD_URL.c_str()); //printf("%s\n", solved_template);
     sep1 = strchr(solved_base, '/');
     sep2 = strchr(sep1+1, '/');
     while(sep2){
         sep1 = strchr(sep2+1, '/');
-        sep2 = sep2 = strchr(sep1+1, '/');
+        sep2 = strchr(sep1+1, '/');
     }
     sep1[1] = 0;
-    //printf("%s\n",solved_base);
+
     string str(solved_base);
     basic_URL = str;
-    //printf("%s\n", basic_URL);
-    return solved_base;
+    //return str;
 }
 
-// mpd_resolve_segment_duration(period, AdaSet, rep, &out_duration, &out_timescale, NULL, NULL);
-int MPD::mpd_resolve_segment_duration(Period period, AdaptationSet AdaSet, Representation rep,
-                                      uint64_t *out_duration, uint32_t *out_timescale)
-{
-  //  if(!period||!AdaSet||!rep) return -1;
-//    uint64_t pts_offset = 0;
-    if(rep.segment_template)
-    {
-        if(rep.segment_template->timescale)
-            *out_timescale = rep.segment_template->timescale;
-        if(rep.segment_template->duration)
-            *out_duration = rep.segment_template->duration;
+void MPD::set_duration(string input_str, MPD_Duration_Type duration_type){
+    int h, m;
+    float s;
+    char * cstr = new char [input_str.length()+1];
+    strcpy (cstr, input_str.c_str());
+    sscanf(cstr, "PT%dH%dM%fS", &h, &m, &s);
+    uint64_t duration = (uint64_t)((h*3600+m*60+s)*(uint64_t)1000);
+    switch (duration_type) {
+    case MAX_SEGMENT_DURATION:
+        max_segment_duration = duration;
+        break;
+    case MEDIA_PRESENTATION_DURATION:
+        media_presentation_duration = duration;
+        break;
+    default:
+        break;
     }
-    return 0;
 }
 
-int MPD::mpd_resolve_url(int AdaSetID, int repID, int download_seg_index, MPD_URLResolveType resolve_type,
+void MPD::set_minBufferTime(string input_str){
+    //string input_str = "PT1.500S";
+    float s;
+    char * cstr = new char [input_str.length()+1];
+    strcpy (cstr, input_str.c_str());
+    sscanf(cstr, "PT%fS", &s);
+    min_buffer_time = (uint64_t)(s*(uint64_t)1000);
+}
+
+int MPD::get_resolved_url(int SetID, int repID, int download_seg_index, MPD_URLResolveType resolve_type,
                          uint64_t *out_segment_duration_in_ms, string *out_url){
     Period* period = periods.at(active_period_index);
     //if(!period) return -1;
-    AdaptationSet* AdaSet = period->adaptationSets.at(AdaSetID);
-    //if(!AdaSet) return -1;
-    Representation* rep = AdaSet->representations.at(repID);
+    AdaptationSet* Set = period->adaptationSets.at(SetID);
+    //if(!Set) return -1;
+    Representation* rep = Set->representations.at(repID);
     //if(!rep ) return -1;    
 
     uint32_t timescale = 0;
     uint64_t duration = 0;
-  //  char* url;
     char *first_sep;
     const char *url_to_solve, *init_template, *index_template, *media_url;
     char solved_template[128];
 
-//    char* input_url = "http://127.0.0.1:8000/";
-//    url = mpd_get_base_url(input_url);
-
     //segment_template
     media_url = init_template = index_template = NULL;
-    if(AdaSet->segment_template){
-        if(AdaSet->segment_template->initialization.size())
-            init_template = AdaSet->segment_template->initialization.c_str();
-        if(AdaSet->segment_template->index.size())
-            index_template = AdaSet->segment_template->index.c_str();
-        if(AdaSet->segment_template->media.size())
-            media_url = AdaSet->segment_template->media.c_str();
-        if(!timescale && AdaSet->segment_template->timescale)
-            timescale = AdaSet->segment_template->timescale;
-        if(!duration && AdaSet->segment_template->duration)
-            duration = AdaSet->segment_template->duration;
+    if(Set->segment_template){
+        if(Set->segment_template->initialization.size())
+            init_template = Set->segment_template->initialization.c_str();
+        if(Set->segment_template->index.size())
+            index_template = Set->segment_template->index.c_str();
+        if(Set->segment_template->media.size())
+            media_url = Set->segment_template->media.c_str();
+        if(!timescale && Set->segment_template->timescale)
+            timescale = Set->segment_template->timescale;
+        if(!duration && Set->segment_template->duration)
+            duration = Set->segment_template->duration;
     }
     if(rep->segment_template){
         if(rep->segment_template->initialization.size())
@@ -92,7 +100,16 @@ int MPD::mpd_resolve_url(int AdaSetID, int repID, int download_seg_index, MPD_UR
     {
         uint64_t out_duration;
         uint32_t out_timescale;
-        mpd_resolve_segment_duration(*period, *AdaSet, *rep, &out_duration, &out_timescale);//, NULL, NULL);
+        //resolve_segment_duration(*period, *Set, *rep, &out_duration, &out_timescale);//, NULL, NULL);
+        {
+            if(rep->segment_template)
+            {
+                if(rep->segment_template->timescale)
+                    out_timescale = rep->segment_template->timescale;
+                if(rep->segment_template->duration)
+                    out_duration = rep->segment_template->duration;
+            }
+        }
         *out_segment_duration_in_ms = (uint64_t)((out_duration * 1000.0) / out_timescale);
     }
     //SKIP  offset the start_number with the number of discarded segments
@@ -159,30 +176,24 @@ int MPD::mpd_resolve_url(int AdaSetID, int repID, int download_seg_index, MPD_UR
 }
 
 
-// initial
-/*void MPD::mpd_setup_period(){
-    //Period
-}
-*/
-void MPD::gf_dash_get_segment_duration(Representation rep, AdaptationSet AdaSet, Period period,
+//period_duration_ms 为 period->duration 或 media_presenrarion_duration
+void MPD::get_segment_duration(Representation *rep, uint64_t period_duration_ms,
                                uint32_t* out_nb_segments, double* out_max_seg_duration){
     double mediaDuration;
     uint32_t timescale;
     uint64_t duration;
     *out_nb_segments = timescale = 0;
     duration = 0;
-    bool single_segment = true;
-    if(rep.segment_template){
-        single_segment = false;
-        if(rep.segment_template->duration) duration = rep.segment_template->duration;
-        if(rep.segment_template->timescale) timescale = rep.segment_template->timescale;
+    if(rep->segment_template){
+        if(rep->segment_template->duration) duration  = rep->segment_template->duration;
+        if(rep->segment_template->timescale) timescale= rep->segment_template->timescale;
     }
     if(!timescale) timescale = 1;
     if(out_max_seg_duration){
         *out_max_seg_duration = (double) duration;
         *out_max_seg_duration /= timescale;
     }
-    mediaDuration = (double)period.duration_in_ms;
+    mediaDuration = (double)period_duration_ms;
     if(!mediaDuration){
         mediaDuration = media_presentation_duration;
     }
@@ -196,5 +207,5 @@ void MPD::gf_dash_get_segment_duration(Representation rep, AdaptationSet AdaSet,
         if(*out_nb_segments < nb_seg)
             (*out_nb_segments)++;
     }
-    rep.nb_seg_in_rep = *out_nb_segments;
+    rep->nb_seg_in_rep = *out_nb_segments;
 }

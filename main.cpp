@@ -1,23 +1,21 @@
 #include <QCoreApplication>
 #include "MPD/src/MPD.h"
-#include <string>
+//#include <string>
 #include <iostream>
-using namespace dash;
+using namespace mpd;
 using namespace std;
 
 int main(int argc, char *argv[])
 {
-
-    char* MPD_URL = "http://10.3.57.202:8000/dash/rabbit/dash_tiled.mpd";
+    string MPD_URL( "http://10.3.57.202:8000/dash/rabbit/dash_tiled.mpd" );
     MPD newMPD;
-    newMPD.mpd_get_base_url(MPD_URL);
-
+    newMPD.set_mpd_url(MPD_URL);
 // parseData(File* mpd_file, MPD newMPD);
     newMPD.xmlns = "urn:mpeg:dash:schema:mpd:2011";
-    newMPD.media_presentation_duration = 3000;
-    newMPD.max_segment_duration = 1000;
+    newMPD.set_duration("PT0H2M4.000S", MEDIA_PRESENTATION_DURATION);
+    newMPD.set_duration("PT0H0M1.000S", MAX_SEGMENT_DURATION);
     newMPD.type = MPD_TYPE_STATIC;
-    int PeriodCount = 1;    int AdaptationCount = 3; int RepresentationCount= 3;
+    int PeriodCount = 1; int AdaptationCount = 3; int RepresentationCount= 3;
     int i,j,k;
 
     for (i = 0; i < PeriodCount ; i++)
@@ -32,6 +30,7 @@ int main(int argc, char *argv[])
 
                 AdaSet->max_width = 2688; AdaSet->max_height= 1792; AdaSet->max_framerate = 30; AdaSet->par = "3:2";
                 AdaSet->EssentialProperty.scheme_Id_Uri="urn:mpeg:dash:srd:2014"; AdaSet->EssentialProperty.value = "1,0,0,0,0";
+                AdaSet->solve_property();
 
                 AdaSet->segment_template = new SegmentTemplate();
                 AdaSet->segment_template->initialization = "dash_tiled_set1_init.mp4";
@@ -66,43 +65,42 @@ int main(int argc, char *argv[])
 
             period->adaptationSets.push_back(AdaSet);
         }
-                //std::cout << AdaSet.representations.at(j).segment_template->media << '\n';
-           //period.adaptationSets.push_back(AdaSet);
         newMPD.periods.push_back(period);
     }
-    std::cout << newMPD.periods.at(0)->adaptationSets.at(0)->segment_template->initialization<< '\n';
-    std::cout << newMPD.periods.at(0)->adaptationSets.at(0)->representations.at(0)->segment_template->media<< '\n';
+    //cout << newMPD.periods.at(0)->adaptationSets.at(0)->segment_template->initialization<< '\n';
+    //cout << newMPD.periods.at(0)->adaptationSets.at(0)->representations.at(0)->segment_template->media<< '\n';
 
 
-//resolve and download init part
+//resolve init part
     int err;
     int AdaSetID = 0, repID=0, download_seg_index=1;
-    MPD_URLResolveType resolve_type = MPD_RESOLVE_URL_INIT;
     uint64_t out_segment_duration_in_ms;
     string out_url;
-    err = newMPD.mpd_resolve_url(AdaSetID, repID, download_seg_index, resolve_type, &out_segment_duration_in_ms, &out_url);
-    std::cout << out_url << '\n';
-    // call download with out_url
+    err = newMPD.get_resolved_url(AdaSetID, repID, download_seg_index, MPD_RESOLVE_URL_INIT, &out_segment_duration_in_ms, &out_url);
+    cout << out_url << '\n';
 
-
+//resolve the rest
     bool go_on = true;
     while(go_on){
-        MPD_URLResolveType resolve_type = MPD_RESOLVE_URL_MEDIA;
-
         int AdaCount = newMPD.periods.at(0)->adaptationSets.size();
         for(i = 0; i < AdaCount; i++){
             int RepCount = newMPD.periods.at(0)->adaptationSets.at(i)->representations.size();
             for(j = 0; j < RepCount; j++){
                 uint64_t out_segment_duration_in_ms;
                 string out_url;
-                err = newMPD.mpd_resolve_url(i, j, 1, resolve_type, &out_segment_duration_in_ms, &out_url);
+                err = newMPD.get_resolved_url(i, j, 1, MPD_RESOLVE_URL_MEDIA, &out_segment_duration_in_ms, &out_url);
                 std::cout << out_url << '\n';
             }
-            // call download with out_url
         }
         go_on = false;
     }
-
+    int periodCount;
+    periodCount = newMPD.periods.size();
+    for(i =0; i < periodCount; i++)
+    {
+        delete(newMPD.periods[i]);
+    }
+    newMPD.periods.clear();
     QCoreApplication a(argc, argv);
     return a.exec();
 }

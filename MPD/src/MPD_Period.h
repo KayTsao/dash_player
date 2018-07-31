@@ -1,41 +1,56 @@
 #ifndef PERIOD_H
 #define PERIOD_H
 #include "MPD_AdaptationSet.h"
-#include "MPD_Segment.h"
-namespace dash
+//#include <cstring>
+
+using namespace std;
+namespace mpd
 {
 class Period
 {
 public:
     Period():
-        id(""),
         duration(""),
-        segment_base     (NULL),
-        segment_list     (NULL),
-        segment_template (NULL){}
-    //~Period(){;}
+        duration_in_ms (0){}
 
-    std::string id;
-    std::string duration;
+    ~Period(){
+        int i, SetCount;
+        SetCount = adaptationSets.size();
+        for(i = 0; i < SetCount; i++)
+        {
+            delete(adaptationSets[i]);
+        }
+        adaptationSets.clear();
+    }
+
+    string duration;
     uint64_t duration_in_ms;
-    std::vector<AdaptationSet*> adaptationSets;
+    vector<AdaptationSet*> adaptationSets;
 
-
-
-
+    /*
+    string id;
     bool isBitstreamSwitching;
-    std::string start;
-    std::string url;
-    std::string serviceLocation;
-    std::string byteRange;
+    string start;
+    string url;
+    string serviceLocation;
+    string byteRange;
 
     SegmentBase *segment_base;
     SegmentList *segment_list;
     SegmentTemplate *segment_template;
+    //vector<Subset> subsets;
+    string xlinkHref;
+    string xlinkActuate;*/
 
-    //std::vector<Subset> subsets;
-    std::string xlinkHref;
-    std::string xlinkActuate;
+    void set_duration_in_ms(){//string input_str = "PT0H2M4.000S";
+        int h, m;
+        float s;
+        char * cstr = new char [duration.length()+1];
+        strcpy (cstr, duration.c_str());
+        sscanf(cstr, "PT%dH%dM%fS", &h, &m, &s);
+        duration_in_ms = (uint64_t)((h*3600+m*60+s)*(uint64_t)1000);
+    }
+
 };
 }
 #endif // PERIOD_H

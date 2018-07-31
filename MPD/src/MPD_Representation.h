@@ -1,23 +1,19 @@
 #ifndef REPRESENTATION_H
 #define REPRESENTATION_H
 #include "MPD_Segment.h"
-namespace dash
+namespace mpd
 {
 class Representation
 {
 public:
     Representation():
-        segment_base     (NULL),
-        segment_list     (NULL),
-        segment_template (NULL),
         id(""),
         bandwidth       (0),
-        quality_ranking  (0){}
+        segment_template (NULL){}
 
-//    ~Representation(){
-//        delete(this->segment_template);
-//        delete(this->segment_base);
-//        delete(this->segment_list);}
+    ~Representation(){
+        if(segment_template) delete(segment_template);
+   }
 
     std::string id; /*MANDATORY*/
     std::string mimeType;
@@ -29,16 +25,17 @@ public:
     int startWithSAP;
     uint32_t bandwidth; /*MANDATORY*/
     std::string dependency_id;
-
-    uint32_t quality_ranking;
-    std::string media_stream_structure_id;
     SegmentTemplate *segment_template;
-    SegmentBase *segment_base;
-    SegmentList *segment_list;
-    //std::vector<BaseUrl> base_URLs;
 
     uint32_t nb_seg_in_rep;
-    // GF_List *sub_representations;
+    /*
+    uint32_t quality_ranking;
+    std::string media_stream_structure_id;
+    SegmentBase *segment_base;
+    SegmentList *segment_list;
+    std::vector<BaseUrl> base_URLs;
+    //*sub_representations;
+    */
 };
 }
 #endif // REPRESENTATION_H

@@ -2,13 +2,15 @@
 #define ADAPTATIONSET_H
 #include "MPD_Segment.h"
 #include "MPD_Representation.h"
-namespace dash
+#include <cstring>
+using namespace std;
+namespace mpd
 {
 
 struct Property{
-    std::string scheme_Id_Uri;
-    std::string value;
-    std::string *id;
+    string scheme_Id_Uri;
+    string value;
+    string *id;
 };
 
 class AdaptationSet
@@ -16,18 +18,23 @@ class AdaptationSet
     //friend class Parser
 public:
     AdaptationSet():
-        id(0),
         max_width(0),
         max_height(0),
         max_framerate(0),
         par(""),
         lang(""),
-        segment_base     (NULL),
-        segment_list     (NULL),
-        segment_template (NULL){}
+        segment_template(NULL){}
 
-    //~AdaptationSet(){;}
-
+    ~AdaptationSet(){
+        int i, RepCount;
+        RepCount = representations.size();
+        for(i =0; i < RepCount; i++)
+        {
+            delete(representations[i]);
+        }
+        representations.clear();
+        if(segment_template) delete(segment_template);
+    }
 
     uint32_t id;
 
@@ -36,16 +43,15 @@ public:
     uint32_t max_width;
     uint32_t max_height;
     uint32_t max_framerate;
-    std::string par;
-    std::string lang;
+    string par;
+    string lang;
     Property SupplementalProperty;
     Property EssentialProperty;
-    std::vector<Representation*>   representations;
+    SegmentTemplate *segment_template;
+    vector<Representation*>   representations;
 
-
-
-    uint32_t group;
-    std::string content_type;
+/*
+    string content_type;
     uint32_t min_bandwidth;
     uint32_t max_bandwidth;
     uint32_t min_width;
@@ -53,29 +59,42 @@ public:
     uint32_t min_framerate;
     bool subsegment_alignment;
     bool subsegment_starts_with_sap;
-
-    std::vector<BaseUrl>          base_URLs;
+    vector<BaseUrl>          base_URLs;
     SegmentBase *segment_base;
     SegmentList *segment_list;
-    SegmentTemplate *segment_template;
+    string xlink_href;
+    string xlink_actuate_on_load;
 
-    std::string                     xlink_href;
-    std::string                     xlink_actuate_on_load;
-
+    vector<Descriptor *> accessibility;
+    vector<Descriptor *> role;
+    vector<Descriptor *> rating;
+    vector<Descriptor *> viewpoint;
+    vector<ContentComponent *> content_component;
+*/
     // info out of MPD
     uint32_t active_rep_index;
     uint32_t prev_active_rep_index;
     uint32_t download_start_time;
+    uint32_t srd_x, srd_y, srd_w, srd_h;
 
-    /*
-        std::vector<Descriptor *> accessibility;
-        std::vector<Descriptor *> role;
-        std::vector<Descriptor *> rating;
-        std::vector<Descriptor *> viewpoint;
-        std::vector<ContentComponent *> content_component;
-    */
+    void solve_property(){
+        if(!EssentialProperty.scheme_Id_Uri.empty()){
+            if(EssentialProperty.scheme_Id_Uri.compare("urn:mpeg:dash:srd:2014") == 0){
+                char * val = new char [EssentialProperty.value.length()+1];
+                strcpy (val, EssentialProperty.value.c_str());
+                sscanf(val, "%d,%d,%d,%d,%d", &id, &srd_x, &srd_y, &srd_w, &srd_h);
+            }
+        }
+        if(!SupplementalProperty.scheme_Id_Uri.empty()){
+            if(SupplementalProperty.scheme_Id_Uri.compare("urn:mpeg:dash:srd:2014") == 0){
+                char * val = new char [EssentialProperty.value.length()+1];
+                strcpy (val, EssentialProperty.value.c_str());
+                sscanf(val, "%d,%d,%d,%d,%d", &id, &srd_x, &srd_y, &srd_w, &srd_h);
+            }
+        }
+    }
+
 private:
-
 };
 }
 #endif // ADAPTATIONSET_H

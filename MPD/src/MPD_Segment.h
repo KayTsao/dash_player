@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 using namespace std;
-namespace dash
+namespace mpd
 {
 struct ByteRange
 {
@@ -12,14 +12,14 @@ struct ByteRange
 };
 
 struct BaseUrl{
-    std::string URL;
-    std::string service_location;
+    string URL;
+    string service_location;
     ByteRange *byte_range;
-    std::string redirection;
+    string redirection;
 };
 
 struct URL{
-    std::string sourceURL;
+    string sourceURL;
     ByteRange  range;
     bool is_resolved;
     //dash::metrics::HTTPTransactionType  type;
@@ -34,7 +34,7 @@ struct SegmentTimelineEntry{
 
 struct SegmentTimeline
 {
-    std::vector<SegmentTimelineEntry> entries;
+    vector<SegmentTimelineEntry> entries;
 };
 
 struct SegmentBase{
@@ -60,13 +60,13 @@ struct MultipleSegmentBase{
 
 struct SegmentURL
 {
-    std::string media;
+    string media;
     ByteRange *media_range;
     std::string index;
     ByteRange *index_range;
     uint32_t duration;
     /*HLS only*/
-    std::string key_url;
+    string key_url;
   //  bin128 key_iv;
   //  u64 hls_utc_start_time;
 } ;
@@ -76,8 +76,8 @@ struct SegmentList
 {
     MultipleSegmentBase multiple_segment_base;
     /*list of segments - can be NULL if no segment*/
-    std::vector<SegmentURL> segment_URLs;
-    std::string xlink_href;
+    vector<SegmentURL> segment_URLs;
+    string xlink_href;
     bool xlink_actuate_on_load;
     uint32_t consecutive_xlink_count;
 } ;
@@ -97,14 +97,14 @@ public:
         timescale = 0;
     }
     //MultipleSegmentBase multiple_segment_base;
-    std::string media;
+    string media;
+    string initialization;
     uint32_t timescale;
-    uint32_t start_number;
     uint32_t duration;
+    uint32_t start_number;
 
-    std::string index;
-    std::string initialization;
-    std::string bitstream_switching;
+    string index;
+    string bitstream_switching;
 };
 /*
 struct SegmentTemplate{

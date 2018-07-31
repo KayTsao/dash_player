@@ -19,7 +19,6 @@ SOURCES += main.cpp \
     MPD/src/MPD.cpp
 
 HEADERS += \
-    MPD/src/dash.h \
     MPD/src/MPD.h \
     MPD/src/MPD_AdaptationSet.h \
     MPD/src/MPD_Period.h \
