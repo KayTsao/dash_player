@@ -34,7 +34,7 @@ public:
     SegmentBase *segment_base;
     SegmentList *segment_list;
     std::vector<BaseUrl> base_URLs;
-    //*sub_representations;
+    sub_representations;
     */
 };
 }

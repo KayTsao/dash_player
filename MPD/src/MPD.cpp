@@ -21,10 +21,8 @@ void MPD::set_mpd_url(string mpd_url){
         sep2 = strchr(sep1+1, '/');
     }
     sep1[1] = 0;
-
     string str(solved_base);
     basic_URL = str;
-    //return str;
 }
 
 void MPD::set_duration(string input_str, MPD_Duration_Type duration_type){
@@ -44,6 +42,7 @@ void MPD::set_duration(string input_str, MPD_Duration_Type duration_type){
     default:
         break;
     }
+    delete[] cstr;
 }
 
 void MPD::set_minBufferTime(string input_str){
@@ -53,16 +52,16 @@ void MPD::set_minBufferTime(string input_str){
     strcpy (cstr, input_str.c_str());
     sscanf(cstr, "PT%fS", &s);
     min_buffer_time = (uint64_t)(s*(uint64_t)1000);
+    delete[] cstr;
 }
 
 int MPD::get_resolved_url(int SetID, int repID, int download_seg_index, MPD_URLResolveType resolve_type,
                          uint64_t *out_segment_duration_in_ms, string *out_url){
+    int err=0;
     Period* period = periods.at(active_period_index);
-    //if(!period) return -1;
     AdaptationSet* Set = period->adaptationSets.at(SetID);
-    //if(!Set) return -1;
     Representation* rep = Set->representations.at(repID);
-    //if(!rep ) return -1;    
+    if(!period||!Set||!rep) return -1;
 
     uint32_t timescale = 0;
     uint64_t duration = 0;
@@ -123,58 +122,61 @@ int MPD::get_resolved_url(int SetID, int repID, int download_seg_index, MPD_URLR
         break;
     default:
         printf("Resolve Type Not Supported");
-        return -1;
+        err = -1;
     }
-    if(!url_to_solve)
-        return 0;
-    //solve the template
-    strcpy(solved_template, url_to_solve);
-//    printf("%s\n", solved_template);  // "1_tiled_dash_track2_$Number$.m4s"
-    first_sep = strchr(solved_template, '$');
-    if(first_sep) first_sep[0] = 0;
-//    printf("%s\n", solved_template);// "1_tiled_dash_track2_"
-
-    first_sep = strchr(url_to_solve, '$');
-//    printf("%s\n", first_sep);// "$Number$.m4s"
-    while(first_sep){
-        char szPrintFormat[10];
-        char szFormat[100];
-        char*second_sep = strchr(first_sep+1, '$'); //second_sep == "$.m4s "
-        if(!second_sep){
-            return -1;
-        }
-        second_sep[0] = 0; //first_sep == "$Number"
-        strcpy(szPrintFormat, "%d");
-        if (!strcmp(first_sep+1, "Number")) {
-//            int start_number = 0; int item_index = 5;
-            sprintf(szFormat, szPrintFormat, download_seg_index);//start_number + item_index);
-            strcat(solved_template, szFormat);
-            //check start time is in period
-            if (period->duration.size())
-            {
-                int request_in_ms = download_seg_index * (int)(*out_segment_duration_in_ms);
-                if(request_in_ms > (int)period->duration_in_ms)
+    if(!url_to_solve){
+        err = -1;
+    }
+    if(!err)
+    {
+        //solve the template
+        strcpy(solved_template, url_to_solve);//    printf("%s\n", solved_template);  // "1_tiled_dash_track2_$Number$.m4s"
+        first_sep = strchr(solved_template, '$');
+        if(first_sep) first_sep[0] = 0;//    printf("%s\n", solved_template);// "1_tiled_dash_track2_"
+        first_sep = strchr(url_to_solve, '$');//    printf("%s\n", first_sep);// "$Number$.m4s"
+        while(first_sep){
+            char szPrintFormat[10];
+            char szFormat[100];
+            char*second_sep = strchr(first_sep+1, '$'); //second_sep == "$.m4s "
+            if(!second_sep){
+                err = 1;
+                break;
+            }
+            second_sep[0] = 0; //first_sep == "$Number"
+            strcpy(szPrintFormat, "%d");
+            if (!strcmp(first_sep+1, "Number")) {
+    //            int start_number = 0; int item_index = 5;
+                sprintf(szFormat, szPrintFormat, download_seg_index);//start_number + item_index);
+                strcat(solved_template, szFormat);
+                //check start time is in period
+                if (period->duration.size())
                 {
-                    printf("Exceed_period_duration!\n");
-                    return -1;//EOS
+                    int request_in_ms = download_seg_index * (int)(*out_segment_duration_in_ms);
+                    if(request_in_ms > (int)period->duration_in_ms)
+                    {
+                        printf("Exceed_period_duration!\n");
+                        err = 2;//EOS
+                        break;
+                    }
                 }
             }
+            second_sep[0] = '$';
+            //printf("%s  %s\n", first_sep, second_sep);// "$Number$.m4s  $.m4s"
+            first_sep = strchr(second_sep+1, '$');
+            if(first_sep) first_sep[0] = 0;
+            if(strlen(second_sep+1))
+                strcat(solved_template, second_sep+1);
+            if(first_sep) first_sep[0] = '$';
         }
-        second_sep[0] = '$';
-        //printf("%s  %s\n", first_sep, second_sep);// "$Number$.m4s  $.m4s"
-        first_sep = strchr(second_sep+1, '$');
-        if(first_sep) first_sep[0] = 0;
-        if(strlen(second_sep+1))
-            strcat(solved_template, second_sep+1);
-        if(first_sep) first_sep[0] = '$';
     }
-    string solved_str(solved_template);
-    string result_url = this->basic_URL;
-    result_url.append(solved_str);
-    *out_url = result_url; //    std::cout <<*out_url<< '\n';
-    return 0;
+    if(!err){
+        string solved_str(solved_template);
+        string result_url = this->basic_URL;
+        result_url.append(solved_str);
+        *out_url = result_url; //    std::cout <<*out_url<< '\n';
+    }
+    return err;
 }
-
 
 //period_duration_ms 为 period->duration 或 media_presenrarion_duration
 void MPD::get_segment_duration(Representation *rep, uint64_t period_duration_ms,

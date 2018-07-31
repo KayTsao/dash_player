@@ -67,10 +67,6 @@ int main(int argc, char *argv[])
         }
         newMPD.periods.push_back(period);
     }
-    //cout << newMPD.periods.at(0)->adaptationSets.at(0)->segment_template->initialization<< '\n';
-    //cout << newMPD.periods.at(0)->adaptationSets.at(0)->representations.at(0)->segment_template->media<< '\n';
-
-
 //resolve init part
     int err;
     int AdaSetID = 0, repID=0, download_seg_index=1;

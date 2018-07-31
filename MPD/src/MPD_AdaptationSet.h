@@ -83,15 +83,18 @@ public:
                 char * val = new char [EssentialProperty.value.length()+1];
                 strcpy (val, EssentialProperty.value.c_str());
                 sscanf(val, "%d,%d,%d,%d,%d", &id, &srd_x, &srd_y, &srd_w, &srd_h);
+                delete[] val;
             }
         }
         if(!SupplementalProperty.scheme_Id_Uri.empty()){
             if(SupplementalProperty.scheme_Id_Uri.compare("urn:mpeg:dash:srd:2014") == 0){
-                char * val = new char [EssentialProperty.value.length()+1];
-                strcpy (val, EssentialProperty.value.c_str());
+                char * val = new char [SupplementalProperty.value.length()+1];
+                strcpy (val, SupplementalProperty.value.c_str());
                 sscanf(val, "%d,%d,%d,%d,%d", &id, &srd_x, &srd_y, &srd_w, &srd_h);
+                delete[] val;
             }
         }
+
     }
 
 private:

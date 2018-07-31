@@ -49,6 +49,7 @@ public:
         strcpy (cstr, duration.c_str());
         sscanf(cstr, "PT%dH%dM%fS", &h, &m, &s);
         duration_in_ms = (uint64_t)((h*3600+m*60+s)*(uint64_t)1000);
+        delete[] cstr;
     }
 
 };
