@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <string>
 #include <vector>
+using namespace std;
 namespace dash
 {
 struct ByteRange
@@ -87,10 +88,10 @@ struct SegmentList
 class SegmentTemplate{
 public:
     SegmentTemplate(){
-        index="";
-        initialization = "unknown";
-        media = "unknown";
-        bitstream_switching = "";
+        index = string();
+        initialization = string();
+        media = string();
+        bitstream_switching = string();
         start_number = 0;
         duration = 0;
         timescale = 0;

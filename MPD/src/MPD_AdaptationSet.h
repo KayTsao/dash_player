@@ -26,7 +26,7 @@ public:
         segment_list     (NULL),
         segment_template (NULL){}
 
-    ~AdaptationSet(){;}
+    //~AdaptationSet(){;}
 
 
     uint32_t id;
@@ -40,7 +40,7 @@ public:
     std::string lang;
     Property SupplementalProperty;
     Property EssentialProperty;
-    std::vector<Representation>   representations;
+    std::vector<Representation*>   representations;
 
 
 
@@ -55,9 +55,9 @@ public:
     bool subsegment_starts_with_sap;
 
     std::vector<BaseUrl>          base_URLs;
-    SegmentBase                     *segment_base;
-    SegmentList                     *segment_list;
-    SegmentTemplate                 *segment_template;
+    SegmentBase *segment_base;
+    SegmentList *segment_list;
+    SegmentTemplate *segment_template;
 
     std::string                     xlink_href;
     std::string                     xlink_actuate_on_load;

@@ -13,12 +13,12 @@ public:
         segment_base     (NULL),
         segment_list     (NULL),
         segment_template (NULL){}
-    ~Period(){;}
+    //~Period(){;}
 
     std::string id;
     std::string duration;
     uint64_t duration_in_ms;
-    std::vector<AdaptationSet> adaptationSets;
+    std::vector<AdaptationSet*> adaptationSets;
 
 
 

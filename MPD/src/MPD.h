@@ -42,6 +42,7 @@ class MPD
 {
 public:
     MPD();
+    std::string basic_URL;
 
     std::string ID;
     int active_period_index;
@@ -61,23 +62,23 @@ public:
     uint64_t suggested_presentation_delay; /* expressed in milliseconds */
     uint64_t max_subsegment_duration; /* expressed in milliseconds */
 
-        /*list of GF_MPD_BaseURL */
-    std::vector<BaseUrl> base_URLs;
-        /*list of strings */
-    std::vector<std::string> *locations;
-        /*list of GF_MPD_Period */
-    std::vector<Period> periods;
-    std::vector<AdaptationSet> AdaptationSets;
-        /*set during parsing*/
-    const char *xml_namespace; /*won't be freed by GPAC*/
+    std::vector<Period *> periods;
 
-    char* basic_URL;
+    /*list of GF_MPD_BaseURL */
+    //std::vector<BaseUrl> base_URLs;
+        /*list of strings */
+    //std::vector<std::string> locations;
+        /*list of GF_MPD_Period */
+    //std::vector<AdaptationSet*> AdaptationSets;
+        /*set during parsing*/
+    //const char *xml_namespace; /*won't be freed by GPAC*/
+
     char* mpd_get_base_url(char* input_url);
     int mpd_resolve_segment_duration(Period period, AdaptationSet AdaSet, Representation rep,
                                           uint64_t *out_duration, uint32_t *out_timescale);
 
     int mpd_resolve_url(int AdaSetID, int repID, int download_seg_index, MPD_URLResolveType resolve_type,
-                        uint64_t *out_segment_duration_in_ms, char **out_url);
+                        uint64_t *out_segment_duration_in_ms, string *out_url);
 
     // initial
     //void get_segment_duration(Representation rep);

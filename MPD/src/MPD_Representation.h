@@ -14,10 +14,10 @@ public:
         bandwidth       (0),
         quality_ranking  (0){}
 
-    ~Representation(){
-        delete(this->segment_template);
-        delete(this->segment_base);
-        delete(this->segment_list);}
+//    ~Representation(){
+//        delete(this->segment_template);
+//        delete(this->segment_base);
+//        delete(this->segment_list);}
 
     std::string id; /*MANDATORY*/
     std::string mimeType;
@@ -35,7 +35,7 @@ public:
     SegmentTemplate *segment_template;
     SegmentBase *segment_base;
     SegmentList *segment_list;
-    std::vector<BaseUrl> base_URLs;
+    //std::vector<BaseUrl> base_URLs;
 
     uint32_t nb_seg_in_rep;
     // GF_List *sub_representations;

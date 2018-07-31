@@ -2,7 +2,7 @@
 using namespace dash;
 using namespace std;
 #include <cstring>
-
+#include <iostream>
 MPD::MPD()
 {
     active_period_index = 0;
@@ -20,8 +20,10 @@ char* MPD::mpd_get_base_url(char* MPD_URL){
         sep2 = sep2 = strchr(sep1+1, '/');
     }
     sep1[1] = 0;
-    printf("%s\n",solved_base);
-    basic_URL = solved_base;
+    //printf("%s\n",solved_base);
+    string str(solved_base);
+    basic_URL = str;
+    //printf("%s\n", basic_URL);
     return solved_base;
 }
 
@@ -42,55 +44,55 @@ int MPD::mpd_resolve_segment_duration(Period period, AdaptationSet AdaSet, Repre
 }
 
 int MPD::mpd_resolve_url(int AdaSetID, int repID, int download_seg_index, MPD_URLResolveType resolve_type,
-                         uint64_t *out_segment_duration_in_ms, char **out_url){
-    Period period = periods.at(active_period_index);
+                         uint64_t *out_segment_duration_in_ms, string *out_url){
+    Period* period = periods.at(active_period_index);
     //if(!period) return -1;
-    AdaptationSet AdaSet = AdaptationSets.at(AdaSetID);
+    AdaptationSet* AdaSet = period->adaptationSets.at(AdaSetID);
     //if(!AdaSet) return -1;
-    Representation rep = AdaSet.representations.at(repID);
-    //if(!rep ) return -1;
+    Representation* rep = AdaSet->representations.at(repID);
+    //if(!rep ) return -1;    
 
-    *out_url = NULL;
     uint32_t timescale = 0;
     uint64_t duration = 0;
-    char* url;
+  //  char* url;
     char *first_sep;
     const char *url_to_solve, *init_template, *index_template, *media_url;
     char solved_template[128];
 
-        char* input_url = "http://127.0.0.1:8000/";
-    url = mpd_get_base_url(input_url);
+//    char* input_url = "http://127.0.0.1:8000/";
+//    url = mpd_get_base_url(input_url);
+
     //segment_template
     media_url = init_template = index_template = NULL;
-    if(AdaSet.segment_template){
-        if(AdaSet.segment_template->initialization.size())
-            init_template = AdaSet.segment_template->initialization.c_str();
-        if(AdaSet.segment_template->index.size())
-            index_template = AdaSet.segment_template->index.c_str();
-        if(AdaSet.segment_template->media.size())
-            media_url = AdaSet.segment_template->media.c_str();
-        if(!timescale && AdaSet.segment_template->timescale)
-            timescale = AdaSet.segment_template->timescale;
-        if(!duration && AdaSet.segment_template->duration)
-            duration = AdaSet.segment_template->duration;
+    if(AdaSet->segment_template){
+        if(AdaSet->segment_template->initialization.size())
+            init_template = AdaSet->segment_template->initialization.c_str();
+        if(AdaSet->segment_template->index.size())
+            index_template = AdaSet->segment_template->index.c_str();
+        if(AdaSet->segment_template->media.size())
+            media_url = AdaSet->segment_template->media.c_str();
+        if(!timescale && AdaSet->segment_template->timescale)
+            timescale = AdaSet->segment_template->timescale;
+        if(!duration && AdaSet->segment_template->duration)
+            duration = AdaSet->segment_template->duration;
     }
-    if(rep.segment_template){
-        if(rep.segment_template->initialization.size())
-            init_template = rep.segment_template->initialization.c_str();
-        if(rep.segment_template->index.size())
-            index_template = rep.segment_template->index.c_str();
-        if(rep.segment_template->media.size())
-            media_url = rep.segment_template->media.c_str();
-        if(!timescale && rep.segment_template->timescale)
-            timescale = rep.segment_template->timescale;
-        if(!duration && rep.segment_template->duration)
-            duration = rep.segment_template->duration;
+    if(rep->segment_template){
+        if(rep->segment_template->initialization.size())
+            init_template = rep->segment_template->initialization.c_str();
+        if(rep->segment_template->index.size())
+            index_template = rep->segment_template->index.c_str();
+        if(rep->segment_template->media.size())
+            media_url = rep->segment_template->media.c_str();
+        if(!timescale && rep->segment_template->timescale)
+            timescale = rep->segment_template->timescale;
+        if(!duration && rep->segment_template->duration)
+            duration = rep->segment_template->duration;
     }
     //return segment duration in all cases
     {
         uint64_t out_duration;
         uint32_t out_timescale;
-        mpd_resolve_segment_duration(period, AdaSet, rep, &out_duration, &out_timescale);//, NULL, NULL);
+        mpd_resolve_segment_duration(*period, *AdaSet, *rep, &out_duration, &out_timescale);//, NULL, NULL);
         *out_segment_duration_in_ms = (uint64_t)((out_duration * 1000.0) / out_timescale);
     }
     //SKIP  offset the start_number with the number of discarded segments
@@ -110,13 +112,13 @@ int MPD::mpd_resolve_url(int AdaSetID, int repID, int download_seg_index, MPD_UR
         return 0;
     //solve the template
     strcpy(solved_template, url_to_solve);
-    printf("%s\n", solved_template);  // "1_tiled_dash_track2_$Number$.m4s"
+//    printf("%s\n", solved_template);  // "1_tiled_dash_track2_$Number$.m4s"
     first_sep = strchr(solved_template, '$');
     if(first_sep) first_sep[0] = 0;
-    printf("%s\n", solved_template);// "1_tiled_dash_track2_"
+//    printf("%s\n", solved_template);// "1_tiled_dash_track2_"
 
     first_sep = strchr(url_to_solve, '$');
-    printf("%s\n", first_sep);// "$Number$.m4s"
+//    printf("%s\n", first_sep);// "$Number$.m4s"
     while(first_sep){
         char szPrintFormat[10];
         char szFormat[100];
@@ -131,10 +133,10 @@ int MPD::mpd_resolve_url(int AdaSetID, int repID, int download_seg_index, MPD_UR
             sprintf(szFormat, szPrintFormat, download_seg_index);//start_number + item_index);
             strcat(solved_template, szFormat);
             //check start time is in period
-            if (period.duration.size())
+            if (period->duration.size())
             {
-                int request_in_ms = download_seg_index * (int)out_segment_duration_in_ms;
-                if(request_in_ms > (int)period.duration_in_ms)
+                int request_in_ms = download_seg_index * (int)(*out_segment_duration_in_ms);
+                if(request_in_ms > (int)period->duration_in_ms)
                 {
                     printf("Exceed_period_duration!\n");
                     return -1;//EOS
@@ -149,12 +151,14 @@ int MPD::mpd_resolve_url(int AdaSetID, int repID, int download_seg_index, MPD_UR
             strcat(solved_template, second_sep+1);
         if(first_sep) first_sep[0] = '$';
     }
-    printf("%s\n", solved_template);  //"1_tiled_dash_track2_X.m4s"
-    strcpy(*out_url, url);
-    *out_url = strcat(*out_url, solved_template); //*out_url = url_concatenate(url, solved_template);
+    string solved_str(solved_template);
+    string result_url = this->basic_URL;
+    result_url.append(solved_str);
+    *out_url = result_url; //    std::cout <<*out_url<< '\n';
     return 0;
-
 }
+
+
 // initial
 /*void MPD::mpd_setup_period(){
     //Period
