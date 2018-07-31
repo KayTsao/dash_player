@@ -16,10 +16,7 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp \
-    MPD/src/MPD.cpp \
-    MPD/src/MPD_AdaptationSet.cpp \
-    MPD/src/MPD_Period.cpp \
-    MPD/src/MPD_Representation.cpp
+    MPD/src/MPD.cpp
 
 HEADERS += \
     MPD/src/dash.h \

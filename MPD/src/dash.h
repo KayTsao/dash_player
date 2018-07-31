@@ -9,7 +9,7 @@ class dash
 public:
     dash();
     ~dash();
-    std::vector<AdaptationSet> adaptation_sets;
+    //std::vector<AdaptationSet> adaptation_sets;
 };
 }
 #endif // DASH_H
