@@ -1,28 +1,45 @@
 #include "MPD.h"
-using namespace mpd;
-using namespace std;
+
 #include <cstring>
 #include <iostream>
+
+using namespace mpd;
+using namespace std;
+
 MPD::MPD()
 {
+    MPD_URL = "";
+    basic_URL = "";
     active_period_index = 0;
 }
+MPD::MPD(string url)
+{
+    active_period_index = 0;
+    set_mpd_url(url);
+}
 
-void MPD::set_mpd_url(string mpd_url){
-
-    MPD_URL = mpd_url;
-    char solved_base[128];
-    char *sep1, *sep2;
-    strcpy(solved_base, MPD_URL.c_str()); //printf("%s\n", solved_template);
-    sep1 = strchr(solved_base, '/');
-    sep2 = strchr(sep1+1, '/');
-    while(sep2){
-        sep1 = strchr(sep2+1, '/');
-        sep2 = strchr(sep1+1, '/');
+MPD::~MPD(){
+    int i, periodCount;
+    periodCount = periods.size();
+    for(i =0; i < periodCount; i++)
+    {
+        delete(periods[i]);
     }
-    sep1[1] = 0;
-    string str(solved_base);
-    basic_URL = str;
+    periods.clear();
+}
+
+uint32_t MPD::setup_mpd(){
+    if(MPD_URL.empty()||basic_URL.empty())
+        return 1;
+    int i, p_count, err;
+    p_count = periods.size();
+    for(i = 0; i < p_count; i++){
+        Period* p = periods.at(i);
+        err = p->setup_period(basic_URL);
+        if(err)
+            return 1;
+    }
+    return 0;
 }
 
 void MPD::set_duration(string input_str, MPD_Duration_Type duration_type){
@@ -66,7 +83,8 @@ int MPD::get_resolved_url(int SetID, int repID, int download_seg_index, MPD_URLR
     uint32_t timescale = 0;
     uint64_t duration = 0;
     char *first_sep;
-    const char *url_to_solve, *init_template, *index_template, *media_url;
+    char *url_to_solve;
+    const char *init_template, *index_template, *media_url;
     char solved_template[128];
 
     //segment_template
@@ -74,8 +92,8 @@ int MPD::get_resolved_url(int SetID, int repID, int download_seg_index, MPD_URLR
     if(Set->segment_template){
         if(Set->segment_template->initialization.size())
             init_template = Set->segment_template->initialization.c_str();
-        if(Set->segment_template->index.size())
-            index_template = Set->segment_template->index.c_str();
+//        if(Set->segment_template->index.size())
+//            index_template = Set->segment_template->index.c_str();
         if(Set->segment_template->media.size())
             media_url = Set->segment_template->media.c_str();
         if(!timescale && Set->segment_template->timescale)
@@ -86,8 +104,8 @@ int MPD::get_resolved_url(int SetID, int repID, int download_seg_index, MPD_URLR
     if(rep->segment_template){
         if(rep->segment_template->initialization.size())
             init_template = rep->segment_template->initialization.c_str();
-        if(rep->segment_template->index.size())
-            index_template = rep->segment_template->index.c_str();
+//        if(rep->segment_template->index.size())
+//            index_template = rep->segment_template->index.c_str();
         if(rep->segment_template->media.size())
             media_url = rep->segment_template->media.c_str();
         if(!timescale && rep->segment_template->timescale)
@@ -115,10 +133,10 @@ int MPD::get_resolved_url(int SetID, int repID, int download_seg_index, MPD_URLR
     url_to_solve = NULL;
     switch (resolve_type){
     case MPD_RESOLVE_URL_INIT:
-        url_to_solve = init_template;
+        url_to_solve = const_cast< char * >(init_template);
         break;
     case MPD_RESOLVE_URL_MEDIA:
-        url_to_solve = media_url;
+        url_to_solve = const_cast< char *>(media_url);
         break;
     default:
         printf("Resolve Type Not Supported");
@@ -178,36 +196,23 @@ int MPD::get_resolved_url(int SetID, int repID, int download_seg_index, MPD_URLR
     return err;
 }
 
-//period_duration_ms 为 period->duration 或 media_presenrarion_duration
-void MPD::get_segment_duration(Representation *rep, uint64_t period_duration_ms,
-                               uint32_t* out_nb_segments, double* out_max_seg_duration){
-    double mediaDuration;
-    uint32_t timescale;
-    uint64_t duration;
-    *out_nb_segments = timescale = 0;
-    duration = 0;
-    if(rep->segment_template){
-        if(rep->segment_template->duration) duration  = rep->segment_template->duration;
-        if(rep->segment_template->timescale) timescale= rep->segment_template->timescale;
+
+
+//设置MPD文件url以及服务器url(basic_URL)
+void MPD::set_mpd_url(string mpd_url){
+
+    MPD_URL = mpd_url;
+    char solved_base[128];
+    char *sep1, *sep2;
+    strcpy(solved_base, MPD_URL.c_str()); //printf("%s\n", solved_template);
+    sep1 = strchr(solved_base, '/');
+    sep2 = strchr(sep1+1, '/');
+    while(sep2){
+        sep1 = strchr(sep2+1, '/');
+        sep2 = strchr(sep1+1, '/');
     }
-    if(!timescale) timescale = 1;
-    if(out_max_seg_duration){
-        *out_max_seg_duration = (double) duration;
-        *out_max_seg_duration /= timescale;
-    }
-    mediaDuration = (double)period_duration_ms;
-    if(!mediaDuration){
-        mediaDuration = media_presentation_duration;
-    }
-    if(mediaDuration && duration){
-        double nb_seg = (double)mediaDuration;
-        /*duration is given in ms*/
-        nb_seg /= 1000;
-        nb_seg *= timescale;
-        nb_seg /= duration;
-        *out_nb_segments = (uint32_t)nb_seg;
-        if(*out_nb_segments < nb_seg)
-            (*out_nb_segments)++;
-    }
-    rep->nb_seg_in_rep = *out_nb_segments;
+    sep1[1] = 0;
+    string str(solved_base);
+    basic_URL = str;
 }
+

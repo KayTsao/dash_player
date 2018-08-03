@@ -22,25 +22,25 @@ public:
         }
         adaptationSets.clear();
     }
-
     string duration;
     uint64_t duration_in_ms;
-    vector<AdaptationSet*> adaptationSets;
+    vector< AdaptationSet * > adaptationSets;
 
-    /*
-    string id;
-    bool isBitstreamSwitching;
-    string start;
-    string url;
-    string serviceLocation;
-    string byteRange;
 
-    SegmentBase *segment_base;
-    SegmentList *segment_list;
-    SegmentTemplate *segment_template;
-    //vector<Subset> subsets;
-    string xlinkHref;
-    string xlinkActuate;*/
+    uint32_t setup_period(string url){
+        int i,as_count, err;
+        if(duration.empty())
+            return 1;
+        set_duration_in_ms();
+        as_count = adaptationSets.size();
+        for(i =0; i < as_count; i++){
+            AdaptationSet* as = adaptationSets.at(i);
+            err = as->setup_adaptationset(url, duration_in_ms);
+            if(err)
+                return 1;
+        }
+        return 0;
+    }
 
     void set_duration_in_ms(){//string input_str = "PT0H2M4.000S";
         int h, m;

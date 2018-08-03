@@ -6,7 +6,6 @@
 using namespace std;
 namespace mpd
 {
-
 struct Property{
     string scheme_Id_Uri;
     string value;
@@ -15,7 +14,6 @@ struct Property{
 
 class AdaptationSet
 {
-    //friend class Parser
 public:
     AdaptationSet():
         max_width(0),
@@ -48,35 +46,39 @@ public:
     Property SupplementalProperty;
     Property EssentialProperty;
     SegmentTemplate *segment_template;
-    vector<Representation*>   representations;
+    vector< Representation * >   representations;
 
-/*
-    string content_type;
-    uint32_t min_bandwidth;
-    uint32_t max_bandwidth;
-    uint32_t min_width;
-    uint32_t min_height;
-    uint32_t min_framerate;
-    bool subsegment_alignment;
-    bool subsegment_starts_with_sap;
-    vector<BaseUrl>          base_URLs;
-    SegmentBase *segment_base;
-    SegmentList *segment_list;
-    string xlink_href;
-    string xlink_actuate_on_load;
+    bool is_basic_AS;
+    string basic_rep_id;//basic rep
+    string dependency_id;// non basic rep
 
-    vector<Descriptor *> accessibility;
-    vector<Descriptor *> role;
-    vector<Descriptor *> rating;
-    vector<Descriptor *> viewpoint;
-    vector<ContentComponent *> content_component;
-*/
     // info out of MPD
-    uint32_t active_rep_index;
-    uint32_t prev_active_rep_index;
-    uint32_t download_start_time;
+ //   uint32_t active_rep_index;
+ //   uint32_t prev_active_rep_index;
+ //   uint32_t download_start_time;
     uint32_t srd_x, srd_y, srd_w, srd_h;
+    int srd_col_idx, srd_row_idx;
 
+    string InitFileUrl;
+    string basic_url;
+    uint64_t duration_in_ms;
+
+    uint32_t setup_adaptationset(string url, uint64_t duration){
+        basic_url = url;
+        solve_property();
+        int i, rep_count, err;
+        duration_in_ms = duration;
+        rep_count = representations.size();
+        for(i =0; i < rep_count; i++){
+            Representation* rep = representations.at(i);
+            err = rep->setup_representation(url, duration);
+            if(err) return 1;
+        }
+        return 0;
+    }
+
+
+private:
     void solve_property(){
         if(!EssentialProperty.scheme_Id_Uri.empty()){
             if(EssentialProperty.scheme_Id_Uri.compare("urn:mpeg:dash:srd:2014") == 0){
@@ -91,13 +93,36 @@ public:
                 char * val = new char [SupplementalProperty.value.length()+1];
                 strcpy (val, SupplementalProperty.value.c_str());
                 sscanf(val, "%d,%d,%d,%d,%d", &id, &srd_x, &srd_y, &srd_w, &srd_h);
+                if(srd_w && srd_h){
+                    srd_col_idx = srd_x/srd_w;
+                    srd_row_idx = srd_y/srd_h;
+                    int count = representations.size();
+                    for(int i = 0; i < count; i++){
+                        representations.at(i)->set_srd_coord_info(srd_row_idx, srd_col_idx);
+                    }
+                }
                 delete[] val;
             }
         }
-
+        Representation *rep = representations.at(0);
+        if(rep){
+            if(rep->dependency_id.empty()){
+                is_basic_AS = true;
+                basic_rep_id = rep->id;
+                if(segment_template->initialization.size()){
+                    InitFileUrl = basic_url;
+                    InitFileUrl.append(segment_template->initialization);
+                }
+                else if(representations.at(0)->segment_template->initialization.size())
+                    InitFileUrl = basic_url;
+                    InitFileUrl.append(representations.at(0)->segment_template->initialization);
+            }
+            else{
+                is_basic_AS = false;
+                dependency_id = rep->dependency_id;
+            }
+        }
     }
-
-private:
 };
 }
 #endif // ADAPTATIONSET_H

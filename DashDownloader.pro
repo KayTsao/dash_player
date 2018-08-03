@@ -16,11 +16,13 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp \
-    MPD/src/MPD.cpp
+    MPD/src/MPD.cpp \
+    dash.cpp
 
 HEADERS += \
     MPD/src/MPD.h \
     MPD/src/MPD_AdaptationSet.h \
     MPD/src/MPD_Period.h \
     MPD/src/MPD_Representation.h \
-    MPD/src/MPD_Segment.h
+    MPD/src/MPD_Segment.h \
+    dash.h

@@ -2,7 +2,7 @@
 #define MPD_H
 #include "MPD_Period.h"
 #include "MPD_Segment.h"
-
+using namespace std;
 namespace mpd
 {
 typedef enum {
@@ -46,29 +46,22 @@ class MPD
 {
 public:
     MPD();
-    ~MPD(){
-        int i, periodCount;
-        periodCount = periods.size();
-        for(i =0; i < periodCount; i++)
-        {
-            delete(periods[i]);
-        }
-        periods.clear();
-    }
+    MPD(string url);
+    ~MPD();
 
-
-    std::string xmlns;
+    int active_period_index;
+    string xmlns;
     uint64_t min_buffer_time; /* expressed in milliseconds */	/*MANDATORY*/
-    MPD_Type type;
     uint64_t media_presentation_duration; /* expressed in milliseconds */	/*MANDATORY if type=static*/
     uint64_t max_segment_duration; /* expressed in milliseconds */
-    std::string profiles;	/*MANDATORY*/
+    MPD_Type type;
+    string profiles;	/*MANDATORY*/
     MPD_ProgramInfo program_infos; /*list of GF_MPD_ProgramInfo */
 
-    std::vector<Period *> periods;
-    std::string MPD_URL;
-    std::string basic_URL;
-    int active_period_index;
+    vector< Period * > periods;
+    string MPD_URL;
+    string basic_URL;
+    uint32_t setup_mpd();
 
 //    std::string ID;
 //    uint64_t availabilityStartTime; /* expressed in milliseconds */	/*MANDATORY if type=dynamic*/
@@ -87,12 +80,14 @@ public:
         /*set during parsing*/
     //const string xml_namespace; /*won't be freed by GPAC*/
 
-    void set_mpd_url(string input_url);
     void set_duration(string input_str, MPD_Duration_Type duration_type);
     void set_minBufferTime(string input_str);
-
     int get_resolved_url(int SetID, int repID, int download_seg_index, MPD_URLResolveType resolve_type,uint64_t *out_segment_duration_in_ms, string *out_url);
     void get_segment_duration(Representation *rep, uint64_t period_duration_ms,uint32_t* out_nb_segments, double* out_max_seg_duration);
+
+private:
+    void set_mpd_url(string input_url);
+
 };
 
 }

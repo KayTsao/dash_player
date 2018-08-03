@@ -8,8 +8,8 @@ using namespace std;
 int main(int argc, char *argv[])
 {
     string MPD_URL( "http://10.3.57.202:8000/dash/rabbit/dash_tiled.mpd" );
-    MPD newMPD;
-    newMPD.set_mpd_url(MPD_URL);
+    MPD newMPD(MPD_URL);// = new MPD(MPD_URL);
+    newMPD.setup_mpd();//set_mpd_url(MPD_URL);
 // parseData(File* mpd_file, MPD newMPD);
     newMPD.xmlns = "urn:mpeg:dash:schema:mpd:2011";
     newMPD.set_duration("PT0H2M4.000S", MEDIA_PRESENTATION_DURATION);
@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
 
                 AdaSet->max_width = 2688; AdaSet->max_height= 1792; AdaSet->max_framerate = 30; AdaSet->par = "3:2";
                 AdaSet->EssentialProperty.scheme_Id_Uri="urn:mpeg:dash:srd:2014"; AdaSet->EssentialProperty.value = "1,0,0,0,0";
-                AdaSet->solve_property();
+                //AdaSet->solve_property();
 
                 AdaSet->segment_template = new SegmentTemplate();
                 AdaSet->segment_template->initialization = "dash_tiled_set1_init.mp4";
