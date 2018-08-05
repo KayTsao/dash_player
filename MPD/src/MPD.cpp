@@ -29,17 +29,20 @@ MPD::~MPD(){
 }
 
 uint32_t MPD::setup_mpd(){
+    uint32_t err = 0;
     if(MPD_URL.empty()||basic_URL.empty())
-        return 1;
-    int i, p_count, err;
-    p_count = periods.size();
-    for(i = 0; i < p_count; i++){
-        Period* p = periods.at(i);
-        err = p->setup_period(basic_URL);
-        if(err)
-            return 1;
+        err = 1;
+    if(!err){
+        int i, p_count;
+        p_count = periods.size();
+        for(i = 0; i < p_count; i++){
+            Period* p = periods.at(i);
+            err = p->setup_period(basic_URL);
+            if(err)
+                return err;
+        }
     }
-    return 0;
+    return err;
 }
 
 void MPD::set_duration(string input_str, MPD_Duration_Type duration_type){
@@ -140,10 +143,10 @@ int MPD::get_resolved_url(int SetID, int repID, int download_seg_index, MPD_URLR
         break;
     default:
         printf("Resolve Type Not Supported");
-        err = -1;
+        err = 1;
     }
     if(!url_to_solve){
-        err = -1;
+        err = 1;
     }
     if(!err)
     {

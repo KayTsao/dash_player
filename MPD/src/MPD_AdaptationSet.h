@@ -64,22 +64,27 @@ public:
     uint64_t duration_in_ms;
 
     uint32_t setup_adaptationset(string url, uint64_t duration){
+        uint32_t err = 0;
         basic_url = url;
-        solve_property();
-        int i, rep_count, err;
-        duration_in_ms = duration;
-        rep_count = representations.size();
-        for(i =0; i < rep_count; i++){
-            Representation* rep = representations.at(i);
-            err = rep->setup_representation(url, duration);
-            if(err) return 1;
+        err = solve_property();
+        if(!err){
+            int i, rep_count;
+            duration_in_ms = duration;
+            rep_count = representations.size();
+            for(i =0; i < rep_count; i++){
+                Representation* rep = representations.at(i);
+                err = rep->setup_representation(url, duration);
+                if(err) return err;
+            }
         }
-        return 0;
+        return err;
     }
 
 
 private:
-    void solve_property(){
+    uint32_t solve_property(){
+        uint32_t err=0;
+        //Essential&Supplemental: tile_based
         if(!EssentialProperty.scheme_Id_Uri.empty()){
             if(EssentialProperty.scheme_Id_Uri.compare("urn:mpeg:dash:srd:2014") == 0){
                 char * val = new char [EssentialProperty.value.length()+1];
@@ -109,19 +114,29 @@ private:
             if(rep->dependency_id.empty()){
                 is_basic_AS = true;
                 basic_rep_id = rep->id;
-                if(segment_template->initialization.size()){
-                    InitFileUrl = basic_url;
-                    InitFileUrl.append(segment_template->initialization);
+                if(segment_template){
+                    if(segment_template->initialization.size()){
+                        InitFileUrl = basic_url;
+                        InitFileUrl.append(segment_template->initialization);
+                    }
                 }
-                else if(representations.at(0)->segment_template->initialization.size())
-                    InitFileUrl = basic_url;
-                    InitFileUrl.append(representations.at(0)->segment_template->initialization);
+                else if(rep->segment_template){
+                    if(rep->segment_template->initialization.size()){
+                        InitFileUrl = basic_url;
+                        InitFileUrl.append(rep->segment_template->initialization);
+                    }
+                }
+                else{
+                    printf("ERROR: no initial filename found\n");
+                    err = 1;
+                }
             }
             else{
                 is_basic_AS = false;
                 dependency_id = rep->dependency_id;
             }
         }
+        return err;
     }
 };
 }

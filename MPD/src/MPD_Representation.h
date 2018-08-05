@@ -51,38 +51,41 @@ public:
     }
 
     uint32_t setup_representation(string url, uint64_t duration){
+        uint32_t err = 0;
         if(segment_template->duration && segment_template->timescale){
             seg_time_ms = (double)segment_template->duration / segment_template->timescale * 1000;
         }
         else
-            return 1;
-        //set seg时长&个数
-        double mediaDuration = (double)duration;
-        double nb_seg = mediaDuration;
-        /*duration is given in ms*/
-        nb_seg /= 1000;
-        nb_seg *= segment_template->timescale;
-        nb_seg /= segment_template->duration;
-        nb_seg_in_rep = (uint32_t)nb_seg;
-        if(nb_seg_in_rep < nb_seg){
-            nb_seg_in_rep++;
+            err = 1;
+        if(!err){
+            //set seg时长&个数
+            double mediaDuration = (double)duration;
+            /*duration is given in ms*/
+            double nb_seg = mediaDuration/1000;
+            nb_seg *= segment_template->timescale;
+            nb_seg /= segment_template->duration;
+            nb_seg_in_rep = (uint32_t)nb_seg;
+            if(nb_seg_in_rep < nb_seg){
+                nb_seg_in_rep++;
+            }
+            //设置媒体文件模板m4s_url_tmp
+            if(segment_template->media.empty()){
+                err = 1;
+            }
+            else{
+                m4s_url_tmp = url;
+                m4s_url_tmp.append(segment_template->media);
+            }
+            downloadFlag = false;
         }
-        //设置媒体文件模板m4s_url_tmp
-        if(segment_template->media.empty()){
-            return 1;
-        }
-        else{
-            m4s_url_tmp = url;
-            m4s_url_tmp.append(segment_template->media);
-        }
-        downloadFlag = false;
-        return 0;
+        return err;
     }
 
     uint32_t get_media_url(uint32_t seg_idx, string* out_url){
-        int err;
+        uint32_t err = 0;
         if(seg_idx > nb_seg_in_rep){
             err = 1;
+            return err;
         }
         char* url_to_solve = new char[m4s_url_tmp.length()+1];
         char* solved_template = new char[m4s_url_tmp.length()+1];
@@ -122,7 +125,7 @@ public:
         if(!err){
             string solved_str(solved_template);
             *out_url = solved_str;
-            std::cout <<*out_url<< '\n';
+            //std::cout <<*out_url<< '\n';
         }
         delete[] url_to_solve;
         delete[] solved_template;

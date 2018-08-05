@@ -30,33 +30,29 @@ static float Dir_Table_3D [HR_GROUP_NB][HR_ROW_NB][HR_COL_NB][3]=
 //Group[0 1 2 3 4]-[LR HR1 HR2 HR3 BLK]
 class dash_group{
 public:
-    dash_group(MPD * Mpd, uint32_t group_id);
+    dash_group();
+    uint32_t setup_dash_group(MPD * Mpd, uint32_t group_id);
     ~dash_group();
 
     uint32_t id;
     string serverURL;
     string initUrl;
-
     uint32_t width, height;
-
-    uint64_t duration;
-    uint32_t nb_seg;
-
-    list<Representation*> Tracks;
+    vector<Representation*> Tracks;
 };
 
 class dash
 {
 public:
-    dash();
+    dash(MPD* mpd);
     ~dash();
     //std::vector<AdaptationSet> adaptation_sets;
-    dash_group DASH_Group[4];
+    vector<dash_group* > DASH_Groups;
+//    dash_group DASH_Groups[5];
 
-    void download_init_resources();
+   // uint32_t setup_groups();
     string get_init_url(uint32_t group_id);
-
-    void download_m4s_resources();
+    string get_media_url(uint32_t group_id, uint32_t track_id, uint32_t segment_id);
 
 private:
     float cosFOVAngle;

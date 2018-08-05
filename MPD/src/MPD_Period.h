@@ -28,7 +28,8 @@ public:
 
 
     uint32_t setup_period(string url){
-        int i,as_count, err;
+        int i,as_count;
+        uint32_t err = 0;
         if(duration.empty())
             return 1;
         set_duration_in_ms();
@@ -37,9 +38,10 @@ public:
             AdaptationSet* as = adaptationSets.at(i);
             err = as->setup_adaptationset(url, duration_in_ms);
             if(err)
-                return 1;
+                return err;
+
         }
-        return 0;
+        return err;
     }
 
     void set_duration_in_ms(){//string input_str = "PT0H2M4.000S";
