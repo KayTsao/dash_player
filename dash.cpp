@@ -137,12 +137,11 @@ void dash::FOV_Based_Adaptation_Algo(const float cam_dir[3] ){
         track_count = DASH_Groups[group_i]->Tracks.size();
         for(track_i = 0; track_i < track_count; track_i++){
             Representation* track = DASH_Groups[group_i]->Tracks[track_i];
-            track->Needed = false;
+            //track->Needed = false;
             //group 1 2 3的track 0 都是"*track1_$Number$.m4s"
-            if(track_i == 0 && group_i == 1)
+            if(track_i == 0)
             {
                 track->Needed = true;
-
             }
             else{
                 row_id = track->srd_row_idx;

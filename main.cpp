@@ -203,6 +203,10 @@ float dt;
                     Representation* track = DASH.DASH_Groups[group_i]->Tracks[track_i];
                     //需要下载
                     if(track->Needed){
+                        if(track_i == 0){
+                            if(group_i != 1)
+                                continue;
+                        }
                         err = DASH.get_media_url(group_i,track_i,seg_idx, &m4s_url, &m4s_fname );
                         cout << m4s_url <<'\n';//<< m4s_fname << '\n';
                         //call download
