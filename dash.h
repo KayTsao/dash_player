@@ -1,8 +1,7 @@
 #ifndef DASH_H
 #define DASH_H
-//#include "MPD_AdaptationSet.h"
 #include "MPD/src/MPD.h"
-#include <list>
+#include <math.h>
 
 using namespace std;
 using namespace mpd;
@@ -27,6 +26,12 @@ static float Dir_Table_3D [HR_GROUP_NB][HR_ROW_NB][HR_COL_NB][3]=
  {{0.625,-0.375,-0.375},{0.875,-0.375,-0.125},{0.875, -0.375,0.125},{ 0.625,-0.375,0.375},	 {0.375,-0.375, 0.625},{0.125,-0.375, 0.875},{-0.125,-0.375,0.875},{-0.375,-0.375,0.625}}}
 };
 
+
+typedef struct __vec3f{
+    float x;
+    float y;
+    float z;
+}Vec3;
 //Group[0 1 2 3 4]-[LR HR1 HR2 HR3 BLK]
 class dash_group{
 public:
@@ -46,17 +51,13 @@ class dash
 public:
     dash(MPD* mpd);
     ~dash();
-    //std::vector<AdaptationSet> adaptation_sets;
     vector<dash_group* > DASH_Groups;
-//    dash_group DASH_Groups[5];
-
    // uint32_t setup_groups();
-    string get_init_url(uint32_t group_id);
-    string get_media_url(uint32_t group_id, uint32_t track_id, uint32_t segment_id);
-
+    uint32_t get_init_url(uint32_t group_id, string* out_url, string* out_file);
+    uint32_t get_media_url(uint32_t group_id, uint32_t track_id, uint32_t segment_id, string* out_url, string* out_file);
+    void FOV_Based_Adaptation_Algo(const float cam_dir[3]);
 private:
     float cosFOVAngle;
-    void FOV_Based_Adaptation_Algo(const float cam_dir[3]);
     void Bandwidth_Based_Adaptation_Algo();
 };
 

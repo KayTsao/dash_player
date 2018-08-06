@@ -19,6 +19,8 @@ public:
         max_width(0),
         max_height(0),
         max_framerate(0),
+        srd_row_idx(0),
+        srd_col_idx(0),
         par(""),
         lang(""),
         segment_template(NULL){}

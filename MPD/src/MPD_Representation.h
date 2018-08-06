@@ -16,8 +16,13 @@ public:
         height(0),
         frame_rate(0),
         bandwidth       (0),
+        srd_row_idx(0),
+        srd_col_idx(0),
         segment_template (NULL),
-        downloadFlag(false),
+        Needed(false),
+        Requested(false),
+        Downloaded(false),
+        basic_url(""),
         m4s_url_tmp(""){}
 
     ~Representation(){
@@ -39,8 +44,11 @@ public:
     int srd_col_idx, srd_row_idx;
     double seg_time_ms;
     uint32_t nb_seg_in_rep;
+    string basic_url;
     string m4s_url_tmp;
-    bool downloadFlag;
+    bool Needed;
+    bool Requested;
+    bool Downloaded;
 //    string init_url;
 
 
@@ -52,6 +60,7 @@ public:
 
     uint32_t setup_representation(string url, uint64_t duration){
         uint32_t err = 0;
+        basic_url = url;
         if(segment_template->duration && segment_template->timescale){
             seg_time_ms = (double)segment_template->duration / segment_template->timescale * 1000;
         }
@@ -76,14 +85,15 @@ public:
                 m4s_url_tmp = url;
                 m4s_url_tmp.append(segment_template->media);
             }
-            downloadFlag = false;
+            Needed = false;
         }
         return err;
     }
 
-    uint32_t get_media_url(uint32_t seg_idx, string* out_url){
+    uint32_t get_media_url(uint32_t seg_idx, string* out_url, string* out_file_name){
         uint32_t err = 0;
         if(seg_idx > nb_seg_in_rep){
+            printf("segment_id[%d] out of range[%d]\n", seg_idx, nb_seg_in_rep);
             err = 1;
             return err;
         }
@@ -124,8 +134,14 @@ public:
         }
         if(!err){
             string solved_str(solved_template);
+           // string file_str(solved_template);
             *out_url = solved_str;
-            //std::cout <<*out_url<< '\n';
+
+            size_t found  = solved_str.find(basic_url);
+            if(found != string::npos)
+                solved_str.erase(found, basic_url.length());
+            *out_file_name = solved_str;
+       //     std::cout <<*out_url<< '\t' << * out_file_name << '\n';
         }
         delete[] url_to_solve;
         delete[] solved_template;

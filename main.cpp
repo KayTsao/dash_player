@@ -3,6 +3,7 @@
 #include "dash.h"
 //#include <string>
 #include <iostream>
+#include <time.h>
 using namespace mpd;
 using namespace std;
 
@@ -140,20 +141,80 @@ int main(int argc, char *argv[])
     parse_mpd(&newMPD);
     newMPD.setup_mpd();//set_mpd_url(MPD_URL);
     dash DASH(&newMPD);
-
-    string init_url, media_url;
+    uint32_t err;
+    string init_url, media_url, file_url;
     int i;
     //0-5
+    /*
     for(i=0; i < 4; i++)
     {
-        init_url = DASH.get_init_url(i);
-        cout << init_url <<'\n';
+        //get_init_url(uint32_t group_id, string* out_url, string* out_file)
+        err = DASH.get_init_url(i,&init_url,&file_url);
+        cout << init_url <<'\n'<< file_url << '\n';
     }
-    for(i = 2 ; i < 4; i++){
-        media_url = DASH.get_media_url(i,1,1);
-        cout << media_url <<'\n';
+    cout << '\n';
+    for(i = 0; i<5; i++){
+        err = DASH.get_media_url(i,0,2, &media_url,&file_url);
+        cout << media_url << '\n' << file_url << '\n';
     }
 
+    cout << '\n';
+    for(i = 1 ; i < 5; i++){
+        err = DASH.get_media_url(i,1,1, &media_url,&file_url);
+        cout << media_url << '\n' << file_url << '\n';
+    }
+
+    cout << '\n';
+    for(i = 1 ; i < 5; i++){
+        err = DASH.get_media_url(i,2,1, &media_url,&file_url);
+        cout << media_url << '\n' << file_url << '\n';
+    }
+
+    cout << '\n';
+    */
+
+    float cam_dir[3];
+    cam_dir[0] = 0;    cam_dir[1] = 0;    cam_dir[2] = -1;
+
+    int group_i, track_i, track_count;
+    int seg_idx = 1;
+
+    //Download initfile
+    string initLR_url, initLR_fname;
+    string initHR_url, initHR_fname;
+    string m4s_url, m4s_fname;
+
+    DASH.get_init_url(0, &initLR_url, &initLR_fname);
+    DASH.get_init_url(0, &initHR_url, &initHR_fname);
+    //call download
+
+clock_t start = clock();
+clock_t diff;
+float dt;
+    err = 0;
+    while(!err){
+        DASH.FOV_Based_Adaptation_Algo(cam_dir);
+        diff = clock() - start;
+        dt = ((float)diff)/CLOCKS_PER_SEC;
+        if(dt>0.99){
+            for(group_i = 0; group_i < 5; group_i ++){
+                track_count = DASH.DASH_Groups[group_i]->Tracks.size();
+                for(track_i=0; track_i < track_count; track_i++){
+                    Representation* track = DASH.DASH_Groups[group_i]->Tracks[track_i];
+                    //需要下载
+                    if(track->Needed){
+                        err = DASH.get_media_url(group_i,track_i,seg_idx, &m4s_url, &m4s_fname );
+                        cout << m4s_url <<'\n';//<< m4s_fname << '\n';
+                        //call download
+                    }
+                }
+            }
+            seg_idx ++;
+            printf("seg_id:%d\n", seg_idx);
+            start = clock();
+        }
+    }
+    printf("end!!!!seg_idx:%d\n", seg_idx);
 
 //    string get_media_url(uint32_t group_id, uint32_t track_id, uint32_t segment_id);
 

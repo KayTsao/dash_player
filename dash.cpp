@@ -1,7 +1,20 @@
 #include "dash.h"
 using namespace mpd;
 #include <iostream>
+static float get_v3_len(Vec3 v){
+    return sqrtf(v.x*v.x + v.y*v.y + v.z*v.z);
+}
+static float v3_dot(Vec3 v1, Vec3 v2){
+    return v1.x*v2.x + v1.y*v2.y + v1.z*v2.z ;
+}
+static void v3_norm(Vec3 *v){
+    float len = get_v3_len(*v);
+    v->x = v->x/len;
+    v->y = v->y/len;
+    v->z = v->z/len;
+}
 
+//DASH_GROUP
 dash_group::dash_group(){
     id = 0;
     serverURL = "";
@@ -26,6 +39,7 @@ uint32_t dash_group::setup_dash_group(MPD *Mpd, uint32_t group_id) {
         width = AS->max_width;
         height = AS->max_height;
         initUrl = AS->InitFileUrl;
+        AS->representations.at(0)->Needed = true;
         Tracks.push_back(AS->representations.at(0));
     }
     else{ //HR1 HR2 HR3 BLK
@@ -46,6 +60,8 @@ uint32_t dash_group::setup_dash_group(MPD *Mpd, uint32_t group_id) {
                 rep = AS->representations.at(group_id - 1);
                 if(!rep)
                     return 1; //error
+                if(group_id == 4)
+                    rep->Needed = true;
                 Tracks.push_back(rep);
             }
         }
@@ -53,13 +69,10 @@ uint32_t dash_group::setup_dash_group(MPD *Mpd, uint32_t group_id) {
     return 0;
 }
 
-
-
-
-
-
+//DASH
 dash::dash(MPD *mpd){
     int i;
+    cosFOVAngle =  0.707;
     for(i = 0; i < 5; i++){
         dash_group *group = new dash_group();
         group->setup_dash_group(mpd, i);
@@ -76,66 +89,77 @@ dash::~dash(){
     DASH_Groups.clear();
 }
 
-string dash::get_init_url(uint32_t group_id){
-    if(group_id < 5 )
-        return DASH_Groups.at(group_id)->initUrl;
-    else
-        return "";
-}
-
-string dash::get_media_url(uint32_t group_id, uint32_t track_id, uint32_t segment_id){
-
-    if(group_id>=5)
-        return "";
-    string out_url;
-    Representation * track = DASH_Groups[group_id]->Tracks[track_id];
-    track->get_media_url(segment_id, &out_url);
-    return out_url;
-}
-
-
-/*
-void dash::download_m4s_resources(){
-    list<Representation*>::iterator it;
-    int i;
-    for(i = 0; i < 5; i++){
-        for(it = DASH_Group[i].Tracks.begin(); it!=DASH_Group[i].Tracks.end(); ++it){
-            Representation* track = *it;
-            if(track->downloadFlag)
-               cout << track->m4s_url_tmp << '\n';
-        }
+uint32_t dash::get_init_url(uint32_t group_id, string* out_url, string* out_file){
+    uint32_t err = 0;
+    if(group_id < 5 ){
+        *out_url = DASH_Groups.at(group_id)->initUrl;
+        string str_tmp = DASH_Groups.at(group_id)->initUrl;
+        size_t found  = str_tmp.find(DASH_Groups.at(group_id)->serverURL);
+        if(found != string::npos)
+            str_tmp.erase(found, DASH_Groups.at(group_id)->serverURL.length());
+        *out_file = str_tmp;
     }
-}*/
+    else
+        err = 1;
+    return err;
+}
+uint32_t dash::get_media_url(uint32_t group_id, uint32_t track_id, uint32_t segment_id, string* out_url, string* out_file){
+    uint32_t err = 0;
+    if(group_id>=5){
+        err = 1;
+        return err;
+    }
+    int track_count = DASH_Groups[group_id]->Tracks.size();
+    if(track_id < track_count){
+        Representation * track = DASH_Groups[group_id]->Tracks[track_id];
+        err = track->get_media_url(segment_id, out_url, out_file);
+      //  cout << '[' << track->srd_row_idx << ',' << track->srd_col_idx << ']' << '\n';
+    }
+    else{
+        err = 1;
+        printf("Track_id[%d] out of range[%d]\n", track_id, track_count);
+    }
+    return err;
+}
 
-//为每个representation设置downloadFlag
+//为每个representation设置Needed
 void dash::FOV_Based_Adaptation_Algo(const float cam_dir[3] ){
-    float dir[3];
-    int row_id, col_id, group_i, track_j;
-    int track_count;
+    Vec3 cam_vec;
+    cam_vec.x = cam_dir[0];
+    cam_vec.y = cam_dir[1];
+    cam_vec.z = cam_dir[2];
+    v3_norm(&cam_vec);
 
-//    for(it = DASH_Group[0].Tracks.begin(); it!=DASH_Group[0].Tracks.end(); ++it){
-//        Representation* track = *it;
-//        track->downloadFlag = true;
-//    }
+    int row_id, col_id, group_i, track_i;
+    int track_count;
     // Group[0]和[4]需要全部下载？
     for(group_i = 1; group_i < 4; group_i++){
         track_count = DASH_Groups[group_i]->Tracks.size();
-        for(track_j = 0; track_j < track_count; track_j++){
-            Representation* track = DASH_Groups[group_i]->Tracks[track_j];
-            if(track_j == 0)
-                track->downloadFlag = true;
+        for(track_i = 0; track_i < track_count; track_i++){
+            Representation* track = DASH_Groups[group_i]->Tracks[track_i];
+            track->Needed = false;
+            //group 1 2 3的track 0 都是"*track1_$Number$.m4s"
+            if(track_i == 0 && group_i == 1)
+            {
+                track->Needed = true;
+
+            }
             else{
                 row_id = track->srd_row_idx;
                 col_id = track->srd_col_idx;
-                dir[0] = Dir_Table_3D[group_i-1][row_id][col_id][0];
-                dir[1] = Dir_Table_3D[group_i-1][row_id][col_id][1];
-                dir[2] = Dir_Table_3D[group_i-1][row_id][col_id][2];
-                float cosTheta = dir[0]*cam_dir[0] + dir[1]*cam_dir[1] + dir[2]*cam_dir[2];
+                Vec3 track_dir;
+                track_dir.x =  Dir_Table_3D[group_i-1][row_id][col_id][0];
+                track_dir.y =  Dir_Table_3D[group_i-1][row_id][col_id][1];
+                track_dir.z =  Dir_Table_3D[group_i-1][row_id][col_id][2];
+                v3_norm(&track_dir);
+
+                float cosTheta = v3_dot(track_dir, cam_vec);//dir[0]*cam_dir[0] + dir[1]*cam_dir[1] + dir[2]*cam_dir[2];
                 if(cosTheta >= cosFOVAngle){
-                    track->downloadFlag = true;
+                    track->Needed = true;
                 }
-                else
-                    track->downloadFlag = false;
+                else{
+                    track->Needed = false;
+                }
             }
         }
     }
