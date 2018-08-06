@@ -1,2 +1,3 @@
-.pro
-.user
+*.pro
+*.pro.user
+*.pro.user*
